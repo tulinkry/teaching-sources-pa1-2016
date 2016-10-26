@@ -1,0 +1,15 @@
+a
+b a
+b b b
+p
+b p
+b p1
+b p2
+b p2 b
+k
+b k
+b ks
+b km
+b kl
+ks km kl
+b b b b b kl kl kl ks ks ks km km km p1 p1 p2 p3

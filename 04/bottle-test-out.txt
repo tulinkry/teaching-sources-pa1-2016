@@ -1,0 +1,15 @@
+Nespravny vstup.
+Nespravny vstup.
+Penize k vraceni: 9.
+Nespravny vstup.
+Nespravny vstup.
+Penize k vraceni: 103.
+Penize k vraceni: 203.
+Penize k vraceni: 206.
+Nespravny vstup.
+Nespravny vstup.
+Penize k vraceni: 503.
+Penize k vraceni: 1003.
+Penize k vraceni: 2003.
+Penize k vraceni: 3500.
+Penize k vraceni: 11215.

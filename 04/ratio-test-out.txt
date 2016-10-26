@@ -1,0 +1,8 @@
+Soucet zlomku je 1.
+Soucet zlomku je 1.
+Soucet zlomku je 1.
+Soucet zlomku neni 1.
+Soucet zlomku neni 1.
+Soucet zlomku je 1.
+Nespravny vstup.
+Nespravny vstup.
