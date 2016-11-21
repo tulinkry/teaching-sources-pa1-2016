@@ -8,6 +8,7 @@ Zadani programu bez vyplneneho reseni. Bez modifikace funkce main doplnte jednot
 aby program v pořádku doběhl (neskončil na makru assert).
 
 Program načte ze vstupu 4 celá čísla ve formátu:
+```plain
 n d/m/y
     d - den
     m - měsíc
@@ -26,6 +27,7 @@ Na výstup zobrazí pro dané datum např.
  		  	   		 rok
  		  	   		 	    ^
  		  	   		 	    poradove cislo tydne pro dane datum
+```
 
 ## ref.date.c
 
