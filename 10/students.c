@@ -53,27 +53,27 @@ int compAvg ( TSTUDENT * a, TSTUDENT * b )
   return a->m_avg - b->m_avg;
 }
 
-int compareStudentsByFirtName ( const void* a, const void * b )
+int compareStudentsByFirstName ( const void * a, const void * b )
 {  
   TSTUDENT* stA = (TSTUDENT*) a;
   TSTUDENT* stB = (TSTUDENT*) b;
   return strcmp ( stA -> m_name, stB -> m_name );
 }
 
-int compareStudentsBySurname ( const void* a, const void * b )
+int compareStudentsBySurname ( const void * a, const void * b )
 {  
   TSTUDENT* stA = (TSTUDENT*) a;
   TSTUDENT* stB = (TSTUDENT*) b;
   return strcmp ( stA -> m_surname, stB -> m_surname );
 }
 
-int compareStudentsByName ( const void* a, const void * b )
+int compareStudentsByName ( const void * a, const void * b )
 {  
     int res;
     res = compareStudentsBySurname ( a, b );
     if ( res != 0 )
-    return res;
-    return compareStudentsByFirtName ( a, b );
+        return res;
+    return compareStudentsByFirstName ( a, b );
 }
 
 
@@ -113,7 +113,7 @@ int main(void)
 
     printf("-- by name --\n");
     /**
-     * Předáváme ukazatel funkci int compareStudentsByName ( const void* a, const void * b ),
+     * Předáváme ukazatel funkci int compareStudentsByName ( const void * a, const void * b ),
      * který odpovídá prototypu int (*) ( const void *, const void * )
      *
      * Kompilátor s tím tedy nemá problém.
@@ -126,7 +126,11 @@ int main(void)
      * qsort ( students, len, sizeof ( int ), compareStudentsByName ); (špatná velikost položky)
      * qsort ( students, len, sizeof ( students ), compareStudentsByName ); (špatná velikost položky)
      */
-    printAll ( students, len );  
+    printAll ( students, len ); 
+
+    printf("-- by first name --\n");
+    qsort ( students, len, sizeof ( *students ), compareStudentsByFirstName );
+    printAll ( students, len ); 
 
     printf("-- by avg --\n");
     /**
@@ -136,7 +140,7 @@ int main(void)
      * Kompilátor si stěžuje, ale protože my víme, co děláme, potlačíme warning přetypováním ukazatele na funkci:
      * ( int (*) ( const void *, const void * ) ) compAvg
      * ^ ------ operace přetypování ----------- ^ (podobně jako (int) a )
-     *        ^ - říkáme, že jde o ukazatel na funkci (nepřiřadili jsme mu jméno)
+     *        ^ - říkáme, že jde o ukazatel na funkci (a nepřiřadili jsme mu jméno, protože zde jména nic neznamenají)
      *   ^ - návratová hodnota funkce, na kterou ukazujeme
      *            ^  seznam parametrů funkce  ^
      *
