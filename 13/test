@@ -36,12 +36,10 @@ def run_test(binary, test, with_output=False):
 
     if (test['exit_code'] > 0 and process == 0) or \
        (test['exit_code'] == 0 and process > 0):
-        return False, "Test for {} failed.\n" + \
-                      "Description: {}\n" + \
+        return False, "Test for {} failed.\n".format(test['file']) + \
+                      "Description: {}\n".format(test['description']) + \
                       "Expected exit code {}, got {}.". \
-            format(test['file'],
-                   test['description'],
-                   test['exit_code'],
+            format(test['exit_code'],
                    process)
 
     if process != 0:
@@ -50,12 +48,10 @@ def run_test(binary, test, with_output=False):
     md5 = hashlib.md5()
     md5.update(output.read())
     if md5.hexdigest() != test['hash']:
-        return False, "Test for {} failed.\n" + \
-                      "Description: {}\n" + \
+        return False, "Test for {} failed.\n".format(test['file']) + \
+                      "Description: {}\n".format(test['description']) + \
                       "Expected checksum {}, got {}.". \
-                      format(test['file'],
-                             test['description'],
-                             test['hash'],
+                      format(test['hash'],
                              md5.hexdigest())
 
     if 'time' in test:
@@ -63,12 +59,9 @@ def run_test(binary, test, with_output=False):
         print("Timing: elapsed = {}s (limit = {}s)".
               format(elapsed, test['time']))
         if elapsed > test['time']:
-            return False, "Test for {} failed.\n" + \
-                          "Description: {}\n" + \
-                          "Time limit exceeded.". \
-                          format(test['file'],
-                                 test['description'])
-
+            return False, "Test for {} failed.\n".format(test['file']) + \
+                          "Description: {}\n".format(test['description']) + \
+                          "Time limit exceeded."
     return True, ""
 
 
