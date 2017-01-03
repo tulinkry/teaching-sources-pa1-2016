@@ -1,0 +1,6 @@
+*.c
+/*.txt
+reader
+generator
+tester.tar
+readme.md

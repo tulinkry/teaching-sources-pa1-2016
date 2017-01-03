@@ -1,0 +1,250 @@
+#!/usr/bin/python3.4
+
+import tempfile
+import hashlib
+import subprocess
+import sys
+import time
+import os
+
+
+def get_script_path():
+    return os.path.dirname(os.path.realpath(__file__))
+
+
+def print_green(args):
+    print('\x1b[6;30;42m' + args + '\x1b[0m')
+
+
+def print_red(args):
+    print('\x1b[6;30;41m' + args + '\x1b[0m')
+
+
+def run_test(binary, test, with_output=False):
+    test['exit_code'] = test['exit_code'] if 'exit_code' in test else 0
+
+    if 'time' in test:
+        t = time.time()
+
+    if not binary.startswith('/') and not binary.startswith('.'):
+        binary = './' + binary
+
+    with_output = None if with_output else subprocess.DEVNULL
+    output = tempfile.NamedTemporaryFile(delete=True)
+    process = subprocess.call(
+        [binary, test['file'], output.name], stdout=with_output)
+
+    if (test['exit_code'] > 0 and process == 0) or \
+       (test['exit_code'] == 0 and process > 0):
+        return False, "Test for {} failed.\n" + \
+                      "Description: {}\n" + \
+                      "Expected exit code {}, got {}.". \
+            format(test['file'],
+                   test['description'],
+                   test['exit_code'],
+                   process)
+
+    if process != 0:
+        return True, ""
+
+    md5 = hashlib.md5()
+    md5.update(output.read())
+    if md5.hexdigest() != test['hash']:
+        return False, "Test for {} failed.\n" + \
+                      "Description: {}\n" + \
+                      "Expected checksum {}, got {}.". \
+                      format(test['file'],
+                             test['description'],
+                             test['hash'],
+                             md5.hexdigest())
+
+    if 'time' in test:
+        elapsed = time.time() - t
+        print("Timing: elapsed = {}s (limit = {}s)".
+              format(elapsed, test['time']))
+        if elapsed > test['time']:
+            return False, "Test for {} failed.\n" + \
+                          "Description: {}\n" + \
+                          "Time limit exceeded.". \
+                          format(test['file'],
+                                 test['description'])
+
+    return True, ""
+
+
+def execute_tests(binary, tests, with_output=False):
+    collected = {}
+    print("=" * 100)
+
+    for test in tests:
+        res, message = run_test(binary, test, with_output)
+        if not res:
+            sys.stdout.write('\x1b[6;30;41mF\x1b[0m')
+            collected[test['file']] = message
+        else:
+            sys.stdout.write('\x1b[6;30;42m.\x1b[0m')
+
+    sys.stdout.write('\n')
+    print("=" * 100)
+
+    return collected
+
+
+def main(executable_name, with_output=False):
+    unreadable = tempfile.NamedTemporaryFile(delete=True)
+    os.chmod(unreadable.name, 0o444)
+
+    tests = [
+        {'file': get_script_path() + '/input/non_existent_input.txt',
+            'hash': '',
+            'description': 'Test for no file',
+            'exit_code': 1},
+        {'file': unreadable.name,
+         'hash': '31be4f62fafde9a97e1d50e17295e862',
+         'description': 'Test for not readable file',
+         'exit_code': 1},
+        {'file': get_script_path() + '/input/0100_in.txt',
+         'hash': '098f6bcd4621d373cade4e832627b4f6',
+         'description': 'Test for a basic message "test" ' +
+                        'in a file interleaved with spaces'},
+        {'file': get_script_path() + '/input/0101_in.txt',
+         'hash': '098f6bcd4621d373cade4e832627b4f6',
+         'description': 'Test for a basic message "test" ' +
+                        'in a file interleaved with usual characters'},
+        {'file': get_script_path() + '/input/0102_in.txt',
+         'hash': '098f6bcd4621d373cade4e832627b4f6',
+         'description': 'Test for a basic message "test" ' +
+                        'in a file interleaved with printable characters'},
+        {'file': get_script_path() + '/input/0103_in.bin',
+         'hash': '098f6bcd4621d373cade4e832627b4f6',
+         'description': 'Test for a basic message "test" ' +
+                        'in a file interleaved with random bytes'},
+        {'file': get_script_path() + '/input/0104_in.txt',
+         'hash': '9167e44574b2016591c4b763c300ec61',
+         'description': 'Test for a basic message'},
+        {'file': get_script_path() + '/input/0105_in.txt',
+         'hash': '7b28a819280f0f22b67fc0471fe9ceaf',
+         'description': 'Test for a usual message ' +
+                        'in a file interleaved with usual characters'},
+        {'file': get_script_path() + '/input/0106_in.txt',
+         'hash': 'c4108de3371bf30b61028b44ad42b326',
+         'description': 'Test for a long message ' +
+                        'in a file interleaved with usual characters'},
+        {'file': get_script_path() + '/input/0107_in.bin',
+         'hash': 'c4108de3371bf30b61028b44ad42b326',
+         'description': 'Test for a long message ' +
+                        'in a file interleaved with random bytes'},
+        {'file': get_script_path() + '/input/0108_in.txt',
+         'hash': 'd41d8cd98f00b204e9800998ecf8427e',
+         'description': 'Test with empty message'},
+        {'file': get_script_path() + '/input/0200_in.txt',
+         'hash': '',
+         'description': 'Test with no signature',
+         'exit_code': 1},
+        {'file': get_script_path() + '/input/0201_in.txt',
+         'hash': '',
+         'description': 'Test with incomplete message ' +
+                        '(EOF is sooner than the next message char)',
+         'exit_code': 1},
+    ]
+
+    print('Running tests:')
+    collected = execute_tests(executable_name, tests, with_output)
+
+    for fail in collected:
+        print_red("For {}:".format(fail))
+        print_red(collected[fail])
+
+    if collected:
+        return
+
+    print_green('Basic tests finished successfully')
+
+    print("=" * 100)
+
+    bonus = [
+        {'file': get_script_path() + '/input/0300_in.txt',
+            'hash': '098f6bcd4621d373cade4e832627b4f6',
+            'description': 'Bonus test for simple message (shift = 0)'},
+        {'file': get_script_path() + '/input/0301_in.txt',
+         'hash': '098f6bcd4621d373cade4e832627b4f6',
+         'description': 'Bonus test for shifted message (shift = 1)'},
+        {'file': get_script_path() + '/input/0302_in.txt',
+         'hash': '098f6bcd4621d373cade4e832627b4f6',
+         'description': 'Bonus test for shifted message (shift = 2)'},
+        {'file': get_script_path() + '/input/0303_in.txt',
+         'hash': '098f6bcd4621d373cade4e832627b4f6',
+         'description': 'Bonus test for shifted message (shift = 3)'},
+        {'file': get_script_path() + '/input/0304_in.txt',
+         'hash': '098f6bcd4621d373cade4e832627b4f6',
+         'description': 'Bonus test for shifted message'},
+        {'file': get_script_path() + '/input/0305_in.txt',
+         'hash': '098f6bcd4621d373cade4e832627b4f6',
+         'description': 'Bonus test for shifted message'},
+        {'file': get_script_path() + '/input/0306_in.txt',
+            'hash': '542a13d8e553b894783e05d4bb33285f',
+            'description': 'Bonus test for long message'},
+        {'file': get_script_path() + '/input/0307_in.txt',
+         'hash': '1f1133ee77f0b3c66c948ae376d55715',
+         'description': 'Bonus test for shifted message (shift = 1)'},
+        {'file': get_script_path() + '/input/0308_in.txt',
+         'hash': '1f1133ee77f0b3c66c948ae376d55715',
+         'description': 'Bonus test for shifted message (shift = 2)'},
+        {'file': get_script_path() + '/input/0309_in.txt',
+         'hash': '1f1133ee77f0b3c66c948ae376d55715',
+         'description': 'Bonus test for shifted message (shift = 3)'},
+        {'file': get_script_path() + '/input/0310_in.txt',
+         'hash': '1f1133ee77f0b3c66c948ae376d55715',
+         'description': 'Bonus test for shifted message'},
+        {'file': get_script_path() + '/input/0311_in.txt',
+         'hash': '1f1133ee77f0b3c66c948ae376d55715',
+         'description': 'Bonus test for shifted message'},
+    ]
+
+    print('Running bonus tests:')
+    collected = execute_tests(executable_name, bonus, with_output)
+
+    for fail in collected:
+        print_red("For {}:".format(fail))
+        print_red(collected[fail])
+
+    if collected:
+        return
+
+    print_green('Bonus tests finished successfully')
+
+    print("=" * 100)
+
+    speed = [
+        {'file': get_script_path() + '/input/0400_in.txt',
+            'hash': 'd33f1ddb54671172050854dbb5b55e06',
+            'description': 'Bonus test for extra long message',},
+    ]
+
+    print('Running large tests:')
+    collected = execute_tests(executable_name, speed, with_output)
+
+    for fail in collected:
+        print_red("For {}:".format(fail))
+        print_red(collected[fail])
+
+    if not collected:
+        print_green('Large tests finished successfully')
+
+
+if __name__ == '__main__':
+    with_output = False
+    if len(sys.argv) < 2:
+        print("Usage: {} <executable file> [--with-output]".
+              format(sys.argv[0]))
+        sys.exit(1)
+
+    if '--with-output' in sys.argv:
+        with_output = True
+        sys.argv.remove('--with-output')
+
+    if not os.access(sys.argv[1], os.X_OK):
+        print("{} is not executable".format(sys.argv[1]))
+        sys.exit(2)
+
+    main(sys.argv[1], with_output)
